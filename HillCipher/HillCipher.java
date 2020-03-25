@@ -22,47 +22,61 @@ class HillCipher
 
     private ArrayList<Integer> array_msg; 
     private FileWriter cipherFile; 
+    
  
    /**
-    * msgToArray takes the message in plainfile and stores it in an Arraylist array_msg
+    * msgToArray takes the message in plainfile and stores it in an Arraylist
+    * array_msg
     * 
     * 
     * @param plainfile
-    * @throws FileNotFoundException
+    * @throws Exception
     * 
     *
     */
-    public void msgToArray(String plainfile) throws FileNotFoundException
+
+   public void msgToArray(String plainfile, int radix) throws Exception
     {
         
         FileInputStream plainFile = new FileInputStream(plainfile);
         Scanner sc_msg = new Scanner(plainFile);
         array_msg = new ArrayList<Integer>();
 
+    
             while(sc_msg.hasNextInt())
             {
-            array_msg.add(sc_msg.nextInt());
+                int p = 0;
+                if(radix < (p = sc_msg.nextInt()))
+                {
+                    sc_msg.close(); throw new Exception("Cant handle encoded letters bigger than radix = "+ radix);
+                }else
+                {
+                    array_msg.add(p);
+                }
+                
             }
-        sc_msg.close();  
+            sc_msg.close();
+
+        
+           
+        
     }
 
     /**
-     * encode performes a matrix multiplication between matrix_key and array_msg
-     * The result is taken mod radix and written in cipherfile
+     * encode performes a matrix multiplication between matrix_key and array_msg The
+     * result is taken mod radix and written in cipherfile
      * 
      * matrix_key is a double array created from the keyfile
      * 
-     *  
+     * 
      * @param keyfile
      * @param cipherfile
      * @param radix
      * @param blocksize
-     * @throws IOException
-     * @throws FileNotFoundException
+     * @throws Exception
      */
 
-    
-    public void encode(String keyfile, String cipherfile, int radix, int blocksize) throws IOException, FileNotFoundException
+    public void encode(String keyfile, String cipherfile, int radix, int blocksize) throws Exception
     {
         try
         {
@@ -75,16 +89,30 @@ class HillCipher
         FileInputStream keyFile = new FileInputStream(keyfile);
         Scanner sc_key = new Scanner(keyFile); 
         ArrayList<ArrayList<Integer>> matrix_key = new ArrayList<ArrayList<Integer>>();
-            
-        for(int i=0;i<blocksize;i++)
+       // ArrayList<Integer> row_key;// = new ArrayList<Integer>();
+        
+        while(sc_key.hasNextInt())
         {
-            ArrayList<Integer> row_key = new ArrayList<Integer>();
-            for(int j=0;j<blocksize;j++)
+
+        
+            for(int i=0;i<blocksize;i++)
             {
-                row_key.add(sc_key.nextInt());
+                ArrayList<Integer> row_key = new ArrayList<Integer>();
+                //row_key = new ArrayList<Integer>();
+                for(int j=0;j<blocksize ;j++)
+                {
+                    if(row_key.size()!=blocksize && !sc_key.hasNextInt()){sc_key.close();throw new Exception("Invaid matrix, needs to be size: "+blocksize+" x "+blocksize );}
+                    int p = sc_key.nextInt();
+                    row_key.add(p);
+                    System.out.println(p);
+                }
+                matrix_key.add(row_key);
+                System.out.println("row size: "+ row_key.size()+" matrix size: "+matrix_key.size());
             }
-            matrix_key.add(row_key);
-        }
+        } System.out.println();
+
+         
+        //if(matrix_key.size()*row_key.size() != blocksize*blocksize){sc_key.close(); throw new Exception("matrix_key size: "+matrix_key.size()*row_key.size()+" is not supported, need to be: "+ blocksize*blocksize);}
         sc_key.close();
 
        
@@ -97,9 +125,9 @@ class HillCipher
             for(int j =0;j<blocksize;j++)
             {
                encoded_msg += matrix_key.get(i).get(j) * array_msg.get(j+x);
-              // System.out.println("matrix_key "+matrix_key.get(i).get(j)+" array_msg " +array_msg.get(j+x)+ " encoded_msg "+encoded_msg );
+               System.out.println("matrix_key "+matrix_key.get(i).get(j)+" array_msg " +array_msg.get(j+x)+ " encoded_msg "+encoded_msg );
             }
-           // System.out.println(encoded_msg%radix);
+            System.out.println(encoded_msg%radix);
          cipherFile.write(String.valueOf(encoded_msg % radix));
          cipherFile.write(' ');
         }
@@ -123,7 +151,7 @@ class HillCipher
 
            try
            {
-               hillCipher.msgToArray(args[3]);
+               hillCipher.msgToArray(args[3], radix);
            }catch(FileNotFoundException e)
            {
             System.out.println( args[3] + " Is not a valid file");
