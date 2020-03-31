@@ -13,7 +13,7 @@ import org.jscience.mathematics.vector.DenseMatrix;
 * radix
 * 
 * 
-* input arg0 = radix(<=256), arg1 = blocksize(<= 8), keyfile(output)
+* input arg0 = radix, arg1 = blocksize, keyfile(output)
 * 
 */
 
