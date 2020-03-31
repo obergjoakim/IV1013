@@ -137,9 +137,9 @@ class HillCipher
             for(int j =0;j<blocksize;j++)
             {
                encoded_msg += matrix_key.get(i).get(j) * array_msg.get(j+x);
-             //  System.out.println("matrix_key "+matrix_key.get(i).get(j)+" array_msg " +array_msg.get(j+x)+ " encoded_msg "+encoded_msg );
+               System.out.println("matrix_key "+matrix_key.get(i).get(j)+" array_msg " +array_msg.get(j+x)+ " encoded_msg "+encoded_msg );
             }
-           // System.out.println(encoded_msg%radix);
+            System.out.println(encoded_msg%radix);
          cipherFile.write(String.valueOf(encoded_msg % radix));
          cipherFile.write(' ');
         }
@@ -156,12 +156,12 @@ class HillCipher
         //Tests whether a file is readable. This method checks that a file exists 
         // and that this Java virtual machine has appropriate privileges that would allow it open the file for reading
         
-       /* if(blocksize != 3 || radix != 26 || args.length != 5)
+        if(blocksize > 8 || radix > 256 || args.length != 5)
         {
-            throw new Exception("This program ONLY takes input in format <radix == 26> <blocksize == 3> <keyFile> <plainFile> <cipherFile>");            
-         } */
-        //if
-        //{
+            throw new Exception("This program ONLY takes input in format <radix <= 256> <blocksize <= 8> <keyFile> <plainFile> <cipherFile>");            
+         } 
+        else
+        {
            HillCipher hillCipher = new HillCipher();
 
            try
@@ -181,7 +181,7 @@ class HillCipher
                System.out.println("File: "+args[2] + " Could not be found!");
            }
            
-       // }       
+        }       
 
     }
 }

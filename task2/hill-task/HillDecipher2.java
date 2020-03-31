@@ -1,5 +1,7 @@
 import java.io.*;
 import java.util.*;
+import org.jscience.mathematics.number.*;
+import org.jscience.mathematics.vector.*;
 
 /**
  * Task 2 remake, try to use hillcipher in hilldecipher and than work from there
@@ -26,16 +28,19 @@ class HillDecipher2
     private FileWriter plainFile; 
     private ArrayList<Integer> row_key;
     private ArrayList<ArrayList<Integer>> matrix_key;
+    private DenseMatrix<Real> keyMatrixToInvert;
+    private ArrayList<ArrayList<Integer>> matrix_key_inverted;
+    private  ArrayList<Integer> temprow;
+  
  
   /**
-   * msgToArray takes the message in plainfile and stores it in an Arraylist array_msg
    * 
-   * @param plainfile
+   * @param cipherfile
    * @param radix
    * @throws Exception
    */
 
-    public void msgToArray(String cipherfile, int radix) throws Exception
+    public void cipherToArray(String cipherfile, int radix) throws Exception
     {
         File checkFile = new File(cipherfile);
         if(!checkFile.canRead()){throw new Exception("File not readable!");}
@@ -65,7 +70,7 @@ class HillDecipher2
      * @throws Exception
      */
 
-    public void keyToMatrix(String keyfile, int blocksize) throws FileNotFoundException, Exception
+    public void keyToDecodeMatrix(String keyfile, int blocksize, int radix) throws FileNotFoundException, Exception
     {
        
         Scanner check_keyFile = new Scanner(new FileInputStream(keyfile));
@@ -77,28 +82,52 @@ class HillDecipher2
             numrows++;
             check_keyFile.nextLine();  
         }
-        if(numrows != blocksize){throw new Exception("INVALID MATRIX FORMAT 1");}
+        if(numrows != blocksize){throw new Exception("INVALID MATRIX FORMAT, WRONG nr of rows");}
         check_keyFile.close();
 
         Scanner sc_key = new Scanner(new FileInputStream(keyfile));
         matrix_key = new ArrayList<ArrayList<Integer>>();
-        
-
+        Real[][] toMatrix_temp = new Real[blocksize][blocksize]; 
+        int row = 0;
         while(sc_key.hasNextLine())
         {
             row_key = new ArrayList<Integer>();
             String[] tempRow = sc_key.nextLine().split(" ");
-            if(tempRow.length!=blocksize){throw new Exception("INVALID MATRIX FORMAT 2");}
+            if(tempRow.length!=blocksize){throw new Exception("INVALID MATRIX FORMAT, WRONG length of row");}
             for(int i=0;i<tempRow.length;i++)
             {
                 row_key.add(Integer.parseInt(tempRow[i]));
+                toMatrix_temp[row][i] = Real.valueOf(tempRow[i]);
                // System.out.println(Integer.parseInt(tempRow[i]));
             }
             // System.out.println();
             matrix_key.add(row_key);
+            row++;
             //sc_key.nextLine();
         }
+
+        keyMatrixToInvert = DenseMatrix.valueOf(toMatrix_temp);
+        DenseMatrix<Real> inverse = keyMatrixToInvert.inverse();
+        matrix_key_inverted = new ArrayList<ArrayList<Integer>>();
+
+        for(int i=0;i<blocksize;i++)
+        {
+            temprow = new ArrayList<Integer>();
+            for(int j=0; j<blocksize;j++)
+            {
+                LargeInteger mod = LargeInteger.valueOf(inverse.get(i,j).longValue()).mod(LargeInteger.valueOf(radix));
+                temprow.add(mod.intValue());
+               // System.out.println("inverted keymatrix mod radix "+mod.intValue()+" "+temprow.get(j));
+                
+            }
+           // System.out.println();
+            matrix_key_inverted.add(temprow);
+        }
+
+        
+       
     }
+
         
     
 
@@ -117,34 +146,40 @@ class HillDecipher2
       */
 
     
-    public void decode(String plainfile, int radix, int blocksize) throws Exception, FileNotFoundException, IOException
+    public void decodeCipher(String plainfile, int radix, int blocksize) throws Exception, FileNotFoundException, IOException
     {
         try
         {
             plainFile = new FileWriter(plainfile);
+             // matrix multiplication and write (result mod radix) to cipherfile
+            // System.out.println("msg size "+array_crypted_msg.size());
+            for(int messageblock=0;messageblock < array_crypted_msg.size(); messageblock = messageblock +blocksize)
+            {   
+               // System.out.println("messageblock "+messageblock);
+                for(int rows= 0; rows < blocksize; rows++)
+                {   
+                    //System.out.println("rows "+rows);
+                    int decoded_msg = 0;
+                    for(int elem =0; elem<blocksize; elem++)
+                    {
+                       // System.out.println("elem "+elem);
+                        decoded_msg += matrix_key_inverted.get(rows).get(elem) * array_crypted_msg.get(elem+messageblock);
+                       // System.out.println("matrix_key_inverted "+matrix_key_inverted.get(rows).get(elem)+" array_crypted_msg " +array_crypted_msg.get(elem+messageblock)+ " encoded_msg "+decoded_msg );
+                    }
+                   // System.out.println(decoded_msg%radix);
+                    plainFile.write(String.valueOf(decoded_msg % radix));
+                    plainFile.write(' ');
+                
+                }
+            } 
+            plainFile.close();
         }catch(IOException e)
         {
-            System.out.println("PlainFile could not be written to!");
+            System.out.println("plainFile could not be written to!");
         }
 
-       
-        // matrix multiplication and write (result mod radix) to cipherfile
-       for(int x=0;x < array_crypted_msg.size(); x += blocksize)
-       {
-        for(int i= 0;i < blocksize;i++)
-        {   
-            int decoded_msg = 0;
-            for(int j =0;j<blocksize;j++)
-            {
-               decoded_msg += matrix_key.get(i).get(j) * array_crypted_msg.get(j+x);
-             //  System.out.println("matrix_key "+matrix_key.get(i).get(j)+" array_msg " +array_msg.get(j+x)+ " encoded_msg "+encoded_msg );
-            }
-           // System.out.println(encoded_msg%radix);
-         plainFile.write(String.valueOf(decoded_msg % radix));
-         plainFile.write(' ');
-        }
-       } 
-       plainFile.close();
+
+  
     }
      
     
@@ -152,13 +187,15 @@ class HillDecipher2
     {  
         int radix = Integer.parseInt(args[0]);
         int blocksize = Integer.parseInt(args[1]);
+        String key = args[2];
+        String output = args[3];
+        String cipher = args[4];
 
-        //Tests whether a file is readable. This method checks that a file exists 
-        // and that this Java virtual machine has appropriate privileges that would allow it open the file for reading
+       
         
         if(blocksize > 8 || radix > 256 || args.length != 5)
         {
-            throw new Exception("This program ONLY takes input in format <radix =< 256> <blocksize =< 8> <keyFile> <plainFile> <cipherFile>");            
+            throw new Exception("This program ONLY takes input in format <radix =< 256> <blocksize =< 8> <keyFile> <plainFile(output)> <cipherFile(input)>");            
          } 
         else
         {
@@ -166,7 +203,7 @@ class HillDecipher2
 
            try
            {
-               hillDecipher.msgToArray(args[4], radix);
+               hillDecipher.cipherToArray(cipher, radix);
            }catch(FileNotFoundException e)
            {
             System.out.println( "File: " + args[4] + " Could not be found!");
@@ -174,8 +211,9 @@ class HillDecipher2
 
            try
            {
-               hillDecipher.keyToMatrix(args[2], blocksize);
-               hillDecipher.decode(args[3], radix, blocksize);
+               //hillDecipher.invertKey(key,blocksize); // 
+               hillDecipher.keyToDecodeMatrix(key, blocksize, radix);
+               hillDecipher.decodeCipher(output, radix, blocksize);
            }catch(FileNotFoundException e)
            {
                System.out.println("File: "+args[2] + " Could not be found!");
