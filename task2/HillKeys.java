@@ -129,9 +129,9 @@ public class HillKeys
         int blocksize = Integer.parseInt(args[1]);
         String outputfile = args[2];
         //System.out.println("HELLO");
-        if(radix > 256 || blocksize > 8 || args.length != 3)
+        if( args.length != 3)
         {
-            throw new Exception("This program takes 3 argument(radix, blocksize, outputfile) and ONLY support radix <= 256 AND blocksize <= 8");
+            throw new Exception("This program takes 3 argument(radix, blocksize, outputfile)");
         }
 
         HillKeys hill = new HillKeys();
