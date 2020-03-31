@@ -1,15 +1,8 @@
-
-
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 import org.jscience.mathematics.number.Real;
 import org.jscience.mathematics.vector.DenseMatrix;
-
-
-
-
-
 
 
 /**
@@ -28,8 +21,15 @@ import org.jscience.mathematics.vector.DenseMatrix;
 public class HillKeys 
 {
 
-    // takes blocksize and creates a n * n matrix
-    // with random integers
+    /**
+     * createMatrix creates a blocksize * blocksize matrix with random integers, and writes it to a textfile
+     * The matrix must be invertible and has a non-zero multiplicative invers, so it can be used to decrypt messages 
+     * 
+     * 
+     * @param radix
+     * @param blocksize
+     * @param keyfile
+     */
     public void createMatrix(int radix, int blocksize, String keyfile)
     {
         //System.out.println("Create matrix");
@@ -50,7 +50,6 @@ public class HillKeys
                     //System.out.println("add " + randomInt+ " to matrix");
                 }
             }
-
             //System.out.println("Matrix created");
             keyMatrix = DenseMatrix.valueOf(keyMatrix_temp);
             // if det(keyMatrix) != 0, then keyMatrix has an inverse
@@ -84,16 +83,12 @@ public class HillKeys
                 }
             }
             
-
-
             if ((detOfKeyMatrix != 0)&&(multiplicative_invers != 0)) 
             {
                 inverse_exist = true;
                 System.out.println("We got a multiplicative invers: "+multiplicative_invers);
                 System.out.println("a:"+a+" * x:"+multiplicative_invers+" % radix:"+radix+"=="+(a*multiplicative_invers)%radix);
                 //System.out.println("Matrix has an inverse, printing to keyFile");
-
-                
 
                 try 
                 {
@@ -123,38 +118,26 @@ public class HillKeys
                     System.out.println("KeyFile could not be written to!");
                 }
             }
-            
-            
-            
-            
-            }
-        }      
+        }
+    }      
         
-            
-                
-              
-    
+                  
 
+    public static void main(String[] args)throws Exception
+    {
+        int radix = Integer.parseInt(args[0]);
+        int blocksize = Integer.parseInt(args[1]);
+        String outputfile = args[2];
+        //System.out.println("HELLO");
+        if(radix > 256 || blocksize > 8 || args.length != 3)
+        {
+            throw new Exception("This program takes 3 argument(radix, blocksize, outputfile) and ONLY support radix <= 256 AND blocksize <= 8");
+        }
 
-
-
-
-            public static void main(String[] args)throws Exception
-            {
-                int radix = Integer.parseInt(args[0]);
-                int blocksize = Integer.parseInt(args[1]);
-                //System.out.println("HELLO");
-                if(radix > 256 || blocksize > 8 || args.length != 3)
-                {
-                    throw new Exception("This program takes 3 argument(radix, blocksize, outputfile) and ONLY support radix <= 256 AND blocksize <= 8");
-                }
-
-                HillKeys hill = new HillKeys();
-                hill.createMatrix(radix, blocksize, args[2]);
-            }
+        HillKeys hill = new HillKeys();
+        hill.createMatrix(radix, blocksize, outputfile);
+    }
 
 
 
 }
-
-
